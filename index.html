@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Currency Exchange Fee Comparison Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Currency Exchange Fee Comparison</h1>
+      <p class="text-gray-500 mt-1">Compare total cost across bank transfer, ATM, card, and FX bureau</p>
+    </header>
+
+    <!-- Inputs -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Conversion Details</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1" for="amount">Amount</label>
+          <input id="amount" type="number" min="1" value="1000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Amount to convert" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1" for="fromCurr">From</label>
+          <select id="fromCurr" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Source currency">
+            <option value="USD">USD – US Dollar</option>
+            <option value="EUR">EUR – Euro</option>
+            <option value="GBP">GBP – British Pound</option>
+            <option value="JPY">JPY – Japanese Yen</option>
+            <option value="CAD">CAD – Canadian Dollar</option>
+            <option value="AUD">AUD – Australian Dollar</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1" for="toCurr">To</label>
+          <select id="toCurr" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Target currency">
+            <option value="EUR">EUR – Euro</option>
+            <option value="USD">USD – US Dollar</option>
+            <option value="GBP">GBP – British Pound</option>
+            <option value="JPY">JPY – Japanese Yen</option>
+            <option value="CAD">CAD – Canadian Dollar</option>
+            <option value="AUD">AUD – Australian Dollar</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1" for="midRate">Mid-Market Rate <span class="text-gray-400 font-normal">(1 From = ? To)</span></label>
+          <input id="midRate" type="number" min="0.0001" step="0.0001" value="0.9250" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Mid-market exchange rate" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1" for="tripType">Trip Type</label>
+          <select id="tripType" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" aria-label="Trip type">
+            <option value="personal">Personal travel</option>
+            <option value="business">Business travel</option>
+            <option value="transfer">International wire transfer</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button id="calcBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition text-base mb-6">Compare Methods</button>
+
+    <!-- Results -->
+    <div id="results" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        <div class="p-4 bg-blue-50 border-b border-blue-100">
+          <p class="text-sm text-blue-800 font-medium">Mid-market rate: 1 <span id="fromLabel"></span> = <span id="rateDisplay"></span> <span id="toLabel"></span></p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" aria-label="Exchange method comparison">
+            <thead class="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Method</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Spread %</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Fixed Fee</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Total Cost</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">You Receive</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Best Value Banner -->
+      <div id="bestBanner" class="rounded-2xl p-5 mb-6 border bg-green-50 border-green-200">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl" aria-hidden="true">🏆</span>
+          <div>
+            <p class="font-bold text-green-800" id="bestTitle"></p>
+            <p class="text-sm text-green-700 mt-0.5" id="bestDesc"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Savings Chart -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-base font-semibold text-gray-800 mb-4">Amount Received Comparison</h3>
+        <div id="barChart" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const METHODS = [
+  { name: 'Specialist FX (e.g. Wise)', icon: '💸', spread: 0.5, fixedFee: 2.5 },
+  { name: 'Credit/Debit Card (no FX fee)', icon: '💳', spread: 1.0, fixedFee: 0 },
+  { name: 'ATM Abroad', icon: '🏧', spread: 2.5, fixedFee: 5 },
+  { name: 'Bank Wire Transfer', icon: '🏦', spread: 3.5, fixedFee: 25 },
+  { name: 'Credit Card (3% FX fee)', icon: '💳', spread: 3.0, fixedFee: 0 },
+  { name: 'Airport FX Bureau', icon: '✈️', spread: 8.0, fixedFee: 3 },
+  { name: 'Hotel Desk Exchange', icon: '🏨', spread: 10.0, fixedFee: 0 },
+];
+
+function calcReceived(amount, midRate, spread, fixed) {
+  const effectiveRate = midRate * (1 - spread / 100);
+  return Math.max(0, amount * effectiveRate - fixed);
+}
+
+function calcTotalCost(amount, midRate, spread, fixed) {
+  const ideal = amount * midRate;
+  const received = calcReceived(amount, midRate, spread, fixed);
+  return ideal - received;
+}
+
+document.getElementById('calcBtn').addEventListener('click', () => {
+  const amount = parseFloat(document.getElementById('amount').value) || 1000;
+  const fromC = document.getElementById('fromCurr').value;
+  const toC = document.getElementById('toCurr').value;
+  const midRate = parseFloat(document.getElementById('midRate').value) || 1;
+
+  if (fromC === toC) { alert('Please select different currencies.'); return; }
+
+  const results = METHODS.map(m => ({
+    ...m,
+    received: calcReceived(amount, midRate, m.spread, m.fixedFee),
+    totalCost: calcTotalCost(amount, midRate, m.spread, m.fixedFee)
+  }));
+
+  results.sort((a, b) => b.received - a.received);
+
+  const best = results[0];
+  const worst = results[results.length - 1];
+  const maxReceived = results[0].received;
+
+  document.getElementById('fromLabel').textContent = fromC;
+  document.getElementById('toLabel').textContent = toC;
+  document.getElementById('rateDisplay').textContent = midRate.toFixed(4);
+
+  function fmt(n, curr) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr, maximumFractionDigits: 2 }).format(n);
+  }
+
+  document.getElementById('tableBody').innerHTML = results.map((m, i) => `
+    <tr class="${i === 0 ? 'bg-green-50' : i === results.length - 1 ? 'bg-red-50' : 'hover:bg-gray-50'} border-b border-gray-50 last:border-0">
+      <td class="px-4 py-3">
+        <span class="mr-1.5">${m.icon}</span>
+        <span class="font-medium text-gray-800">${m.name}</span>
+        ${i === 0 ? '<span class="ml-2 text-xs bg-green-200 text-green-800 px-1.5 py-0.5 rounded-full font-semibold">BEST</span>' : ''}
+        ${i === results.length - 1 ? '<span class="ml-2 text-xs bg-red-200 text-red-800 px-1.5 py-0.5 rounded-full font-semibold">WORST</span>' : ''}
+      </td>
+      <td class="px-4 py-3 text-right text-gray-600">${m.spread.toFixed(1)}%</td>
+      <td class="px-4 py-3 text-right text-gray-600">${fmt(m.fixedFee, fromC)}</td>
+      <td class="px-4 py-3 text-right font-medium ${i === 0 ? 'text-green-700' : i === results.length - 1 ? 'text-red-600' : 'text-gray-700'}">${fmt(m.totalCost, toC)}</td>
+      <td class="px-4 py-3 text-right font-bold ${i === 0 ? 'text-green-700' : i === results.length - 1 ? 'text-red-600' : 'text-gray-800'}">${fmt(m.received, toC)}</td>
+    </tr>`).join('');
+
+  document.getElementById('bestTitle').textContent = `Best Value: ${best.name} — You receive ${fmt(best.received, toC)}`;
+  document.getElementById('bestDesc').textContent = `Compared to the worst option (${worst.name}), you save ${fmt(best.received - worst.received, toC)} by choosing the best method.`;
+
+  document.getElementById('barChart').innerHTML = results.map(m => {
+    const pct = maxReceived > 0 ? (m.received / maxReceived) * 100 : 0;
+    return `
+    <div>
+      <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <span>${m.icon} ${m.name}</span>
+        <span class="font-semibold text-gray-700">${fmt(m.received, toC)}</span>
+      </div>
+      <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full bg-blue-500 rounded-full transition-all" style="width:${pct.toFixed(1)}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+</script>
+</body>
+</html>
